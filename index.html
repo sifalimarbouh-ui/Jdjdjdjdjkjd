@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد المناهج المغربية وحل المعادلات | AI Tutor</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Highlight.js for Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <!-- Marked.js for Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- MathJax for LaTeX equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            chtml: { linebreaks: { automatic: true, width: 'container' } },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts (Cairo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+
+        .prose p {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+        .prose ul, .prose ol {
+            margin-right: 1.5rem;
+            margin-bottom: 0.75rem;
+            list-style-type: disc;
+        }
+        .prose code:not(pre code) {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #f43f5e;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+        }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #res-steps-chain {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+        #res-steps-chain mjx-container {
+            max-width: 100%;
+        }
+
+        /* Fully Independent Resizable Handles for Crop Box */
+        .crop-handle {
+            width: 20px;
+            height: 20px;
+            background-color: #6366f1;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            touch-action: none;
+            z-index: 40;
+        }
+        .handle-tl { top: -10px; left: -10px; cursor: nwse-resize; }
+        .handle-tr { top: -10px; right: -10px; cursor: nesw-resize; }
+        .handle-bl { bottom: -10px; left: -10px; cursor: nesw-resize; }
+        .handle-br { bottom: -10px; right: -10px; cursor: nwse-resize; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Setup Modal (First time entry) -->
+    <div id="setup-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-xl rounded-3xl p-6 md:p-8 border border-slate-800 shadow-2xl space-y-6 text-center">
+            <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl mx-auto flex items-center justify-center border border-indigo-500/30">
+                <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+            </div>
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold text-slate-100">مرحباً بك في مساعدك الدراسي المغربي</h2>
+                <p class="text-slate-400 text-sm">اختر مستواك الدراسي للانتقال للمساعد وحل المعادلات:</p>
+            </div>
+
+            <div id="grade-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-right">
+                <button type="button" data-grade="الأولى إعدادي" class="grade-btn p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-600/10 transition-all flex items-center justify-between text-slate-300">
+                    <span class="font-medium text-sm">الأولى إعدادي</span>
+                    <i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i>
+                </button>
+                <button type="button" data-grade="الثانية إعدادي" class="grade-btn p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-600/10 transition-all flex items-center justify-between text-slate-300">
+                    <span class="font-medium text-sm">الثانية إعدادي</span>
+                    <i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i>
+                </button>
+                <button type="button" data-grade="الثالثة إعدادي" class="grade-btn p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-600/10 transition-all flex items-center justify-between text-slate-300">
+                    <span class="font-medium text-sm">الثالثة إعدادي (التاهل للثانوي)</span>
+                    <i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i>
+                </button>
+                <button type="button" data-grade="الجذع المشترك" class="grade-btn p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-600/10 transition-all flex items-center justify-between text-slate-300">
+                    <span class="font-medium text-sm">الجذع المشترك</span>
+                    <i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i>
+                </button>
+                <button type="button" data-grade="الأولى باكالوريا" class="grade-btn p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-600/10 transition-all flex items-center justify-between text-slate-300">
+                    <span class="font-medium text-sm">الأولى باكالوريا</span>
+                    <i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i>
+                </button>
+                <button type="button" data-grade="الثانية باكالوريا" class="grade-btn p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-600/10 transition-all flex items-center justify-between text-slate-300">
+                    <span class="font-medium text-sm">الثانية باكالوريا (الوطني)</span>
+                    <i data-lucide="chevron-left" class="w-4 h-4 text-slate-500"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Header -->
+    <header class="flex items-center justify-between p-4 glass-panel sticky top-0 z-40 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+                <i data-lucide="book-open" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 id="app-title" class="font-bold text-base text-slate-100">مساعد المناهج المغربية</h1>
+                <span id="current-grade-badge" class="text-xs text-indigo-400 font-medium">المستوى: جارٍ التحميل...</span>
+            </div>
+        </div>
+        <button id="btn-change-grade" title="تغيير المستوى" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-indigo-400 transition-colors">
+            <i data-lucide="settings-2" class="w-5 h-5"></i>
+        </button>
+    </header>
+
+    <!-- MAIN VIEWS CONTAINER -->
+    <div class="flex-1 flex flex-col pb-20 overflow-hidden relative">
+
+        <!-- VIEW 1: CHAT VIEW -->
+        <div id="view-chat" class="flex-1 flex flex-col h-[calc(100vh-130px)] overflow-hidden">
+            <div id="messages-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6"></div>
+            
+            <div class="p-3 md:p-4 border-t border-slate-800/60 glass-panel">
+                <form id="chat-form" class="max-w-4xl mx-auto relative flex flex-col bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl">
+                    <textarea id="user-input" rows="1" placeholder="اكتب سؤالك أو استفسارك الدراسي هنا..." class="w-full bg-transparent px-4 pt-3.5 pb-2 text-slate-100 placeholder-slate-500 focus:outline-none resize-none max-h-48 text-base leading-relaxed"></textarea>
+                    <div class="flex items-center justify-between px-3 pb-3 pt-1 border-t border-slate-800/40">
+                        <div class="flex items-center gap-1">
+                            <button type="button" id="btn-mic" class="p-2 rounded-xl text-slate-400 hover:text-indigo-400 transition-colors"><i data-lucide="mic" class="w-5 h-5"></i></button>
+                            <span id="stt-status" class="text-xs text-amber-400 hidden animate-pulse">جاري الاستماع...</span>
+                        </div>
+                        <button type="submit" id="btn-send" class="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors flex items-center justify-center shadow-lg"><i data-lucide="send-horizontal" class="w-5 h-5"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW 2: SOLVER / CAMERA VIEW -->
+        <div id="view-solver" class="flex-1 flex flex-col h-[calc(100vh-130px)] overflow-y-auto p-4 hidden space-y-6 max-w-3xl mx-auto w-full">
+            
+            <!-- Camera & Independent Resizable Crop Box Container -->
+            <div class="glass-panel rounded-3xl p-4 border border-slate-800 shadow-xl flex flex-col items-center space-y-4">
+                <div class="text-center space-y-1">
+                    <h2 class="text-lg font-bold text-slate-100">كاميرا وتأطير المعادلات</h2>
+                    <p class="text-xs text-slate-400">اسحب كل زاوية من زوايا الإطار الأربع لتحديد المعادلة بدقة تامة</p>
+                </div>
+
+                <!-- Camera Stream & Dynamic Canvas Container -->
+                <div id="camera-viewport" class="relative w-full max-w-md h-72 bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-800 flex items-center justify-center select-none">
+                    <video id="camera-video" autoplay playsinline class="absolute inset-0 w-full h-full object-cover hidden"></video>
+                    <canvas id="camera-canvas" class="hidden"></canvas>
+                    
+                    <img id="solver-image-preview" src="" alt="المعادلة الملتقطة" class="absolute inset-0 w-full h-full object-contain bg-black hidden">
+
+                    <!-- Resizable Dynamic Crop Box with 4 Independent Handles -->
+                    <div id="crop-box" class="absolute border-2 border-indigo-400 rounded-lg shadow-[0_0_20px_rgba(99,102,241,0.6)]" style="top: 25%; left: 15%; width: 70%; height: 50%;">
+                        <span class="bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full absolute -top-3 right-2 shadow font-semibold pointer-events-none">منطقة التأطير</span>
+                        <div class="crop-handle handle-tl" data-handle="tl"></div>
+                        <div class="crop-handle handle-tr" data-handle="tr"></div>
+                        <div class="crop-handle handle-bl" data-handle="bl"></div>
+                        <div class="crop-handle handle-br" data-handle="br"></div>
+                    </div>
+
+                    <div id="camera-placeholder" class="text-center p-6 text-slate-500 space-y-2 pointer-events-none">
+                        <i data-lucide="camera-off" class="w-10 h-10 mx-auto"></i>
+                        <p class="text-xs">اضغط على زر تشغيل الكاميرا أو اختر صورة من الاستوديو</p>
+                    </div>
+                </div>
+
+                <input type="file" id="solver-file-input" accept="image/*" class="hidden">
+
+                <!-- Controls Bar -->
+                <div class="flex items-center gap-4 pt-2">
+                    <button type="button" id="btn-toggle-camera" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition-all">
+                        <i data-lucide="video" class="w-4 h-4"></i>
+                        <span>تشغيل الكاميرا</span>
+                    </button>
+
+                    <button type="button" id="btn-capture-img" title="حل المعادلة المؤطرة" class="w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/40 transition-all border-4 border-slate-900">
+                        <i data-lucide="scan-line" class="w-6 h-6"></i>
+                    </button>
+
+                    <button type="button" id="btn-gallery-img" title="اختيار صورة مسبقاً" class="w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-indigo-400 flex items-center justify-center border border-slate-700 transition-all">
+                        <i data-lucide="image" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Solution Result Area -->
+            <div id="solver-result-container" class="hidden space-y-4">
+                <div class="glass-panel rounded-3xl p-6 border border-slate-800 space-y-5 shadow-2xl">
+                    
+                    <!-- Section 1: Final Solution -->
+                    <div class="space-y-2">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-indigo-400"></i>
+                            <span>الحل النهائي</span>
+                        </h3>
+                        <div id="res-direct-output" class="text-lg font-bold text-white bg-slate-900/90 p-3.5 rounded-2xl border border-slate-800 font-mono text-center">
+                            ---
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-800">
+
+                    <!-- Section 2: Sequential Steps -->
+                    <div class="space-y-2">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="list-ordered" class="w-5 h-5 text-indigo-400"></i>
+                            <span>الخطوات المتتالية</span>
+                        </h3>
+                        <div id="res-steps-chain" class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 font-mono text-sm space-y-2 text-white direction-ltr text-left">
+                            ---
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-800">
+
+                    <!-- Section 3: Detailed Explanation -->
+                    <div class="space-y-2">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-indigo-400"></i>
+                            <span>الشرح المفصل</span>
+                        </h3>
+                        <div id="res-detailed-explanation" class="text-white text-sm leading-relaxed prose space-y-2">
+                            ---
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="solver-loading" class="hidden text-center py-8 space-y-3">
+                <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-sm text-indigo-300 font-medium animate-pulse">جاري تحليل قص المنطقة المؤطرة واستخراج الحل النهائي...</p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 inset-x-0 glass-panel border-t border-slate-800 z-50 flex items-center justify-around py-3 px-6 shadow-2xl">
+        <button type="button" id="nav-btn-chat" class="flex flex-col items-center gap-1 text-indigo-400 transition-all">
+            <i data-lucide="message-square" class="w-5 h-5"></i>
+            <span class="text-xs font-semibold">المحادثة</span>
+        </button>
+        <div class="w-px h-6 bg-slate-800"></div>
+        <button type="button" id="nav-btn-solver" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-all">
+            <i data-lucide="scan-line" class="w-5 h-5"></i>
+            <span class="text-xs font-semibold">حل المعادلات</span>
+        </button>
+    </nav>
+
+    <!-- Application Script -->
+    <script>
+        lucide.createIcons();
+
+        const CONFIG = {
+            apiKey: 'sk-vcaAcqv6FI2LBCVFWKD0nksnzWMuTHad88NZVRKajlQ6ouoa',
+            model: 'gpt-4o-mini',
+            endpoint: 'https://api.openai.com/v1/chat/completions'
+        };
+
+        const STATE = {
+            selectedGrade: localStorage.getItem('moroccan_student_grade') || '',
+            chats: JSON.parse(localStorage.getItem('moroccan_chats') || '[]'),
+            currentChatId: null,
+            isGenerating: false,
+            recognition: null,
+            isListening: false,
+            activeTab: 'chat',
+            cameraStream: null
+        };
+
+        const elements = {
+            setupModal: document.getElementById('setup-modal'),
+            gradeOptions: document.querySelectorAll('.grade-btn'),
+            currentGradeBadge: document.getElementById('current-grade-badge'),
+            btnChangeGrade: document.getElementById('btn-change-grade'),
+            viewChat: document.getElementById('view-chat'),
+            viewSolver: document.getElementById('view-solver'),
+            navBtnChat: document.getElementById('nav-btn-chat'),
+            navBtnSolver: document.getElementById('nav-btn-solver'),
+            messagesContainer: document.getElementById('messages-container'),
+            chatForm: document.getElementById('chat-form'),
+            userInput: document.getElementById('user-input'),
+            btnSend: document.getElementById('btn-send'),
+            btnMic: document.getElementById('btn-mic'),
+            sttStatus: document.getElementById('stt-status'),
+            cameraViewport: document.getElementById('camera-viewport'),
+            cameraVideo: document.getElementById('camera-video'),
+            cameraCanvas: document.getElementById('camera-canvas'),
+            solverImagePreview: document.getElementById('solver-image-preview'),
+            cameraPlaceholder: document.getElementById('camera-placeholder'),
+            cropBox: document.getElementById('crop-box'),
+            btnToggleCamera: document.getElementById('btn-toggle-camera'),
+            btnCaptureImg: document.getElementById('btn-capture-img'),
+            btnGalleryImg: document.getElementById('btn-gallery-img'),
+            solverFileInput: document.getElementById('solver-file-input'),
+            solverResultContainer: document.getElementById('solver-result-container'),
+            solverLoading: document.getElementById('solver-loading'),
+            resDirectOutput: document.getElementById('res-direct-output'),
+            resStepsChain: document.getElementById('res-steps-chain'),
+            resDetailedExplanation: document.getElementById('res-detailed-explanation')
+        };
+
+        // Tab Switching
+        elements.navBtnChat.addEventListener('click', () => switchTab('chat'));
+        elements.navBtnSolver.addEventListener('click', () => switchTab('solver'));
+
+        function switchTab(tab) {
+            STATE.activeTab = tab;
+            if (tab === 'chat') {
+                elements.viewChat.classList.remove('hidden');
+                elements.viewSolver.classList.add('hidden');
+                elements.navBtnChat.className = 'flex flex-col items-center gap-1 text-indigo-400 transition-all';
+                elements.navBtnSolver.className = 'flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-all';
+                stopCamera();
+            } else {
+                elements.viewChat.classList.add('hidden');
+                elements.viewSolver.classList.remove('hidden');
+                elements.navBtnSolver.className = 'flex flex-col items-center gap-1 text-indigo-400 transition-all';
+                elements.navBtnChat.className = 'flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-all';
+            }
+        }
+
+        // Setup Modal Handling
+        elements.gradeOptions.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const grade = btn.getAttribute('data-grade');
+                STATE.selectedGrade = grade;
+                localStorage.setItem('moroccan_student_grade', grade);
+                elements.setupModal.classList.add('hidden');
+                updateGradeUI();
+                if (STATE.chats.length === 0) createNewChat();
+            });
+        });
+
+        elements.btnChangeGrade.addEventListener('click', () => {
+            elements.setupModal.classList.remove('hidden');
+        });
+
+        function updateGradeUI() {
+            elements.currentGradeBadge.innerText = `المستوى: ${STATE.selectedGrade}`;
+        }
+
+        // Camera Management
+        elements.btnToggleCamera.addEventListener('click', () => {
+            if (STATE.cameraStream) stopCamera();
+            else startCamera();
+        });
+
+        async function startCamera() {
+            try {
+                const constraints = { video: { facingMode: 'environment' } };
+                STATE.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                elements.cameraVideo.srcObject = STATE.cameraStream;
+                elements.cameraVideo.classList.remove('hidden');
+                elements.solverImagePreview.classList.add('hidden');
+                elements.cameraPlaceholder.classList.add('hidden');
+                elements.btnToggleCamera.innerHTML = '<i data-lucide="video-off" class="w-4 h-4"></i><span>إيقاف الكاميرا</span>';
+                lucide.createIcons();
+            } catch (err) {
+                alert('تعذر فتح الكاميرا الحية. يمكنك استخدام زر المعرض لاختيار صورة من هاتفك.');
+            }
+        }
+
+        function stopCamera() {
+            if (STATE.cameraStream) {
+                STATE.cameraStream.getTracks().forEach(track => track.stop());
+                STATE.cameraStream = null;
+                elements.cameraVideo.classList.add('hidden');
+                elements.cameraPlaceholder.classList.remove('hidden');
+                elements.btnToggleCamera.innerHTML = '<i data-lucide="video" class="w-4 h-4"></i><span>تشغيل الكاميرا</span>';
+                lucide.createIcons();
+            }
+        }
+
+        // --- Fully Independent Corner Resizing Logic for Crop Box ---
+        const handles = document.querySelectorAll('.crop-handle');
+        handles.forEach(handle => {
+            let activeHandle = null;
+            let startX, startY, startLeft, startTop, startWidth, startHeight;
+
+            handle.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                activeHandle = handle.getAttribute('data-handle');
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = elements.cropBox.offsetLeft;
+                startTop = elements.cropBox.offsetTop;
+                startWidth = elements.cropBox.offsetWidth;
+                startHeight = elements.cropBox.offsetHeight;
+                handle.setPointerCapture(e.pointerId);
+            });
+
+            handle.addEventListener('pointermove', (e) => {
+                if (!activeHandle) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                const parentW = elements.cameraViewport.clientWidth;
+                const parentH = elements.cameraViewport.clientHeight;
+
+                let l = startLeft, t = startTop, w = startWidth, h = startHeight;
+
+                if (activeHandle === 'br') {
+                    w = Math.max(50, Math.min(startWidth + dx, parentW - startLeft));
+                    h = Math.max(50, Math.min(startHeight + dy, parentH - startTop));
+                } else if (activeHandle === 'bl') {
+                    w = Math.max(50, startWidth - dx);
+                    l = startLeft + (startWidth - w);
+                    h = Math.max(50, Math.min(startHeight + dy, parentH - startTop));
+                    if (l < 0) { w += l; l = 0; }
+                } else if (activeHandle === 'tr') {
+                    w = Math.max(50, Math.min(startWidth + dx, parentW - startLeft));
+                    h = Math.max(50, startHeight - dy);
+                    t = startTop + (startHeight - h);
+                    if (t < 0) { h += t; t = 0; }
+                } else if (activeHandle === 'tl') {
+                    w = Math.max(50, startWidth - dx);
+                    l = startLeft + (startWidth - w);
+                    h = Math.max(50, startHeight - dy);
+                    t = startTop + (startHeight - h);
+                    if (l < 0) { w += l; l = 0; }
+                    if (t < 0) { h += t; t = 0; }
+                }
+
+                elements.cropBox.style.left = `${l}px`;
+                elements.cropBox.style.top = `${t}px`;
+                elements.cropBox.style.width = `${w}px`;
+                elements.cropBox.style.height = `${h}px`;
+            });
+
+            handle.addEventListener('pointerup', (e) => {
+                activeHandle = null;
+            });
+        });
+
+        // Crop & Capture Image from Crop Box Bounds
+        elements.btnCaptureImg.addEventListener('click', () => {
+            const canvas = elements.cameraCanvas;
+            const ctx = canvas.getContext('2d');
+            const viewport = elements.cameraViewport;
+            const crop = elements.cropBox;
+
+            let sourceElem = STATE.cameraStream ? elements.cameraVideo : (elements.solverImagePreview.src ? elements.solverImagePreview : null);
+
+            if (!sourceElem) {
+                elements.solverFileInput.click();
+                return;
+            }
+
+            let sourceW = sourceElem.videoWidth || sourceElem.naturalWidth || viewport.clientWidth;
+            let sourceH = sourceElem.videoHeight || sourceElem.naturalHeight || viewport.clientHeight;
+
+            let scaleX = sourceW / viewport.clientWidth;
+            let scaleY = sourceH / viewport.clientHeight;
+
+            let cropX = crop.offsetLeft * scaleX;
+            let cropY = crop.offsetTop * scaleY;
+            let cropW = crop.offsetWidth * scaleX;
+            let cropH = crop.offsetHeight * scaleY;
+
+            canvas.width = cropW;
+            canvas.height = cropH;
+
+            ctx.drawImage(sourceElem, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+            const croppedBase64 = canvas.toDataURL('image/jpeg');
+            processImageWithAI(croppedBase64.split(',')[1], 'image/jpeg');
+        });
+
+        // Gallery File Selector
+        elements.btnGalleryImg.addEventListener('click', () => elements.solverFileInput.click());
+
+        elements.solverFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (uploadEvent) => {
+                elements.solverImagePreview.src = uploadEvent.target.result;
+                elements.solverImagePreview.classList.remove('hidden');
+                elements.cameraPlaceholder.classList.add('hidden');
+                stopCamera();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Process Cropped Area with AI API (Strict Formatting & No Introductions)
+        async function processImageWithAI(base64Data, mimeType) {
+            elements.solverLoading.classList.remove('hidden');
+            elements.solverResultContainer.classList.add('hidden');
+
+            try {
+                const systemPrompt = `أنت أستاذ رياضيات محترف في المنظومة التعليمية المغربية لمستوى "${STATE.selectedGrade}".
+الطالب أرفق صورة مؤطرة لتمريّن رياضي.
+يجب أن تجيب بالصيغة والترتيب الحرفي التالي تماماً، **دون أي مقدمات أو عبارات ترحيبية أو جمل إنشائية مثل "إليك الحل" أو "بناءً على الصورة"**:
+
+[الناتج النهائي]
+اكتب الناتج النهائي المباشر في سطر واحد هنا فقط.
+
+[الخطوات المتتالية]
+اكتب الخطوات متتالية بالترتيب الرياضي الصارم (مثل النشر والتبسيط السطر تلو الآخر)، وضع كل تعبير رياضي بين علامتي $...$ بشكل صحيح، ولا تترك علامة $ منفردة:
+= $الخطوة 1$
+= $الخطوة 2$
+= $النتيجة$
+
+[الشرح المفصل]
+اكتب الشرح التفصيلي خطوة بخطوة والقواعد المعتمدة.`;
+
+                const payload = {
+                    model: CONFIG.model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        {
+                            role: 'user',
+                            content: [
+                                { type: 'text', text: 'حل المعادلة المؤطرة:' },
+                                { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
+                            ]
+                        }
+                    ]
+                };
+
+                const response = await fetch(CONFIG.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || 'خطأ في الاتصال بالخادم.');
+
+                const textOutput = data.choices?.[0]?.message?.content || 'لم يتم العثور على حل.';
+
+                renderFormattedSolverResult(textOutput);
+
+            } catch (error) {
+                console.error(error);
+                alert('حدث خطأ أثناء تحليل المنطقة المؤطرة: ' + error.message);
+            } finally {
+                elements.solverLoading.classList.add('hidden');
+                elements.solverResultContainer.classList.remove('hidden');
+            }
+        }
+
+        function repairMathDelimiters(text) {
+            return text.split('\n').map(line => {
+                const hasLatex = /\\(?:sqrt|frac|cdot|times|left|right|sum|int|pi|alpha|beta)/.test(line);
+                if (!hasLatex) return line;
+
+                const dollarCount = (line.match(/\$/g) || []).length;
+                if (dollarCount === 0) return `$${line}$`;
+                if (dollarCount % 2 === 1) {
+                    return line.trimStart().startsWith('$') ? `${line}$` : `$${line}`;
+                }
+                return line;
+            }).join('\n');
+        }
+
+        function typesetMath(element) {
+            if (!window.MathJax?.typesetPromise) return;
+            window.MathJax.typesetClear([element]);
+            window.MathJax.typesetPromise([element]).catch(() => {});
+        }
+
+        function renderFormattedSolverResult(rawText) {
+            // Separate the result sections and repair a missing opening math delimiter.
+            rawText = repairMathDelimiters(rawText);
+            let parts = rawText.split(/\[الخطوات المتتالية\]|\[الشرح المفصل\]/);
+            
+            let directResult = parts[0] ? parts[0].replace(/\[الناتج النهائي\]/g, '').trim() : "غير متوفر";
+            let stepsChain = parts[1] ? parts[1].trim() : rawText;
+            // Display each solution step as a block equation so MathJax can break long expressions.
+            stepsChain = stepsChain.replace(/^\s*(.*?)\$(.+)\$\s*$/gm, (_, prefix, math) => `$$${prefix}${math}$$`);
+            let explanation = parts[2] ? parts[2].trim() : "راجع الخطوات أعلاه.";
+
+            elements.resDirectOutput.innerText = directResult;
+            elements.resStepsChain.innerText = stepsChain;
+            elements.resDetailedExplanation.innerHTML = marked.parse(explanation);
+            typesetMath(elements.resDirectOutput);
+            typesetMath(elements.resStepsChain);
+            typesetMath(elements.resDetailedExplanation);
+        }
+
+        // App Initialization
+        function initApp() {
+            if (!STATE.selectedGrade) {
+                elements.setupModal.classList.remove('hidden');
+            } else {
+                updateGradeUI();
+                if (STATE.chats.length === 0) createNewChat();
+                else selectChat(STATE.chats[0].id);
+            }
+            setupChatEventListeners();
+        }
+
+        function createNewChat() {
+            const newChat = { id: 'chat_' + Date.now(), title: 'محادثة جديدة', messages: [] };
+            STATE.chats.unshift(newChat);
+            saveChats();
+            selectChat(newChat.id);
+        }
+
+        function selectChat(id) {
+            STATE.currentChatId = id;
+            renderMessages();
+        }
+
+        function saveChats() {
+            localStorage.setItem('moroccan_chats', JSON.stringify(STATE.chats));
+        }
+
+        function renderMessages() {
+            elements.messagesContainer.innerHTML = '';
+            const currentChat = STATE.chats.find(c => c.id === STATE.currentChatId);
+            if (!currentChat || currentChat.messages.length === 0) {
+                elements.messagesContainer.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
+                        <div class="p-4 rounded-full bg-indigo-600/10 text-indigo-400 border border-indigo-500/20">
+                            <i data-lucide="book-open-check" class="w-10 h-10"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-200">أستاذك الخصوصي للمناهج المغربية</h3>
+                        <p class="text-slate-400 max-w-md text-sm">اسأل في أي درس أو انتقل لتبويب "حل المعادلات" لتأطير وتصوير التمارين مباشرة!</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+            currentChat.messages.forEach(m => appendMsgToDOM(m.role, m.text));
+        }
+
+        function appendMsgToDOM(role, text) {
+            const isUser = role === 'user';
+            const wrap = document.createElement('div');
+            wrap.className = `flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`;
+            wrap.innerHTML = `
+                <div class="max-w-[85%] rounded-2xl px-4 py-3 text-sm ${isUser ? 'bg-indigo-600 text-white rounded-tl-none shadow-lg' : 'glass-card text-slate-200 rounded-tr-none prose'}">
+                    ${isUser ? escapeHtml(text).replace(/\n/g, '<br>') : marked.parse(repairMathDelimiters(text))}
+                </div>`;
+            elements.messagesContainer.appendChild(wrap);
+            if (!isUser) typesetMath(wrap);
+            elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+            return wrap;
+        }
+
+        async function sendChatMessage() {
+            const text = elements.userInput.value.trim();
+            if (!text || STATE.isGenerating) return;
+
+            const currentChat = STATE.chats.find(c => c.id === STATE.currentChatId);
+            if (!currentChat) return;
+
+            currentChat.messages.push({ role: 'user', text });
+            appendMsgToDOM('user', text);
+            elements.userInput.value = '';
+
+            STATE.isGenerating = true;
+            elements.btnSend.disabled = true;
+            const botWrapper = appendMsgToDOM('model', 'جاري التفكير...');
+
+            try {
+                const messages = [
+                    { role: 'system', content: `أنت أستاذ خصوصي للمناهج المغربية لمستوى "${STATE.selectedGrade}".` },
+                    ...currentChat.messages.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }))
+                ];
+                const payload = { model: CONFIG.model, messages };
+
+                const res = await fetch(CONFIG.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error?.message || 'خطأ في الخادم.');
+
+                const answer = data.choices?.[0]?.message?.content || 'لا إجابة.';
+                currentChat.messages.push({ role: 'model', text: answer });
+                saveChats();
+
+                botWrapper.querySelector('.prose').innerHTML = marked.parse(repairMathDelimiters(answer));
+                typesetMath(botWrapper);
+            } catch (err) {
+                botWrapper.querySelector('.prose').innerHTML = `<span class="text-rose-400">خطأ: ${escapeHtml(err.message)}</span>`;
+            } finally {
+                STATE.isGenerating = false;
+                elements.btnSend.disabled = false;
+                elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+            }
+        }
+
+        function setupChatEventListeners() {
+            elements.chatForm.addEventListener('submit', (e) => { e.preventDefault(); sendChatMessage(); });
+            elements.userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
